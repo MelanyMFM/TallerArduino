@@ -1,8 +1,136 @@
 ---
-title: "Taller"
-format: pdf
-editor: visual
+title: "Identificación de patrones en datos de aceleración obtenidos mediante el celular"
+subtitle: "Análisis de patrones de movimiento"
+author: 
+  name: Sofía Duque Rendón 
+  name: Melany Franco Marin 
+  name: Juan David Trejos
+  name: Miguel Ángel Vargas Valencia
+date: last-modified
+date-format: full
+lang: es
+format: 
+  pdf:
+    toc: true
+editor: source
+execute: 
+  echo: false
+  warning: false
 ---
 
-## Quarto
+```{r}
+rm(list = ls())
+```
 
+```{r}
+library(tidyverse)
+library(gridExtra)
+library(patchwork)
+library(cowplot)
+```
+
+```{r}
+datosSofia <- read.csv("sensores/GrabacionSofia.csv")
+datosMelany <- read.csv("sensores/GrabacionMelany.csv")
+datosJuan <- read.csv("sensores/GrabacionJuanDavid.csv")
+datosMiguel <- read.csv("sensores/GrabacionMiguel.csv")
+
+```
+
+```{r}
+datosSofia <- datosSofia |> 
+  mutate(fecha = as.POSIXct(as.numeric(timestamp) / 1000, origin = "1970-01-01"),
+         AccT = sqrt(AccX^2 + AccY^2 + AccZ^2))
+```
+
+\newpage
+
+## Gráficas exploratorias
+
+### Gráfica sencilla con la aceleración en X
+
+```{r}
+ggplot(datos1, aes(fecha, AccX)) +
+  geom_line()
+```
+
+```{r}
+gx <- ggplot(datos1, aes(fecha, AccX)) +
+  geom_line()
+gy <- ggplot(datos1, aes(fecha, AccX)) +
+  geom_line()
+gz <- ggplot(datos1, aes(fecha, AccX)) +
+  geom_line()
+```
+
+\newpage
+
+### Gráficas exploratorias conjuntas de X, Y y Z con diferentes paquetes de R
+
+#### Gráfica conjunta con el paquete "patchwork"
+
+```{r}
+#| fig-height: 7
+(gx / gy / gz)
+```
+
+\newpage
+
+#### Gráfica conjunta con el paquete "gridExtra"
+
+```{r}
+#| fig-height: 7
+gridExtra::grid.arrange(gx, gx, gx)
+```
+
+\newpage
+
+#### Gráfica conjunta con el paquete "cowplot"
+
+```{r}
+#| fig-height: 7
+plot_grid(gx, gy, gz, ncol = 1, labels = "AUTO")
+```
+
+\newpage
+
+### Gráfica de la aceleración total.
+
+$$
+AccT = \sqrt{AccX^2 + AccY^2 + AccZ^2}
+$$
+
+```{r}
+ggplot(datos1, aes(fecha, AccT)) +
+  geom_line()
+```
+
+\newpage
+
+### Gráfica con una sección de la aceleración total.
+
+```{r}
+datosP <- datos1 |> 
+  filter(fecha > as.POSIXct("2025-05-06 09:20:00") &
+         fecha < as.POSIXct("2025-05-06 09:20:10"))
+```
+
+```{r}
+ggplot(datosP, aes(fecha, AccT)) +
+  geom_line()
+```
+
+```{r}
+ggplot(datosP |> na.omit(), aes(fecha, AccT)) +
+  geom_line()
+```
+
+\newpage
+
+## Resumen de todos los datos de aceleración
+
+```{r}
+summary(datos1)
+```
+
+![](img/celular_acelera.png){fig-align="center" width="500"}
