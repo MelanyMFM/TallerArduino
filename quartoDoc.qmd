@@ -79,54 +79,42 @@ datosMiguel <- datosMiguel |>
 
 \newpage
 
-## Gráficas exploratorias
-
-### Gráfica sencilla con la aceleración en X
+## Gráficas exploratorias de X, Y y Z
 
 ```{r}
-ggplot(datosMiguel, aes(fecha, AccX)) +
+gxSofia <- ggplot(datosSofia, aes(fecha, AccX)) +
+  geom_line()
+gySofia <- ggplot(datosSofia, aes(fecha, AccX)) +
+  geom_line()
+gzSofia <- ggplot(datosSofia, aes(fecha, AccX)) +
+  geom_line()
+
+gxMelany <- ggplot(datosMelany, aes(fecha, AccX)) +
+  geom_line()
+gyMelany <- ggplot(datosMelany, aes(fecha, AccX)) +
+  geom_line()
+gzMelany <- ggplot(datosMelany, aes(fecha, AccX)) +
+  geom_line()
+
+gxJuan <- ggplot(datosJuan, aes(fecha, AccX)) +
+  geom_line()
+gyJuan <- ggplot(datosJuan, aes(fecha, AccX)) +
+  geom_line()
+gzJuan <- ggplot(datosJuan, aes(fecha, AccX)) +
+  geom_line()
+
+gxMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
+  geom_line()
+gyMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
+  geom_line()
+gzMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
   geom_line()
 ```
-
-```{r}
-gx <- ggplot(datosMiguel, aes(fecha, AccX)) +
-  geom_line()
-gy <- ggplot(datosMiguel, aes(fecha, AccX)) +
-  geom_line()
-gz <- ggplot(datosMiguel, aes(fecha, AccX)) +
-  geom_line()
-```
-
-\newpage
-
-### Gráficas exploratorias conjuntas de X, Y y Z con diferentes paquetes de R
-
-#### Gráfica conjunta con el paquete "patchwork"
 
 ```{r}
 #| fig-height: 7
 (gx / gy / gz)
 ```
-
-\newpage
-
-#### Gráfica conjunta con el paquete "gridExtra"
-
-```{r}
-#| fig-height: 7
-gridExtra::grid.arrange(gx, gx, gx)
-```
-
-\newpage
-
-#### Gráfica conjunta con el paquete "cowplot"
-
-```{r}
-#| fig-height: 7
-plot_grid(gx, gy, gz, ncol = 1, labels = "AUTO")
-```
-
-\newpage
 
 ### Gráfica de la aceleración total.
 
@@ -135,6 +123,15 @@ AccT = \sqrt{AccX^2 + AccY^2 + AccZ^2}
 $$
 
 ```{r}
+ggplot(datosSofia, aes(fecha, AccT)) +
+  geom_line()
+
+ggplot(datosMelany, aes(fecha, AccT)) +
+  geom_line()
+
+ggplot(datosJuan, aes(fecha, AccT)) +
+  geom_line()
+
 ggplot(datosMiguel, aes(fecha, AccT)) +
   geom_line()
 ```
@@ -164,5 +161,11 @@ ggplot(datosMiguelP |> na.omit(), aes(fecha, AccT)) +
 ## Resumen de todos los datos de aceleración
 
 ```{r}
+summary(datosSofia)
+
+summary(datosMelany)
+
+summary(datosJuan)
+
 summary(datosMiguel)
 ```
