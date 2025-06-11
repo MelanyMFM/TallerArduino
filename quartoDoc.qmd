@@ -29,6 +29,10 @@ library(patchwork)
 library(cowplot)
 ```
 
+# Introducción
+
+# Descripción y recolección de los datos
+
 ```{r}
 datosSofia <- read.csv("sensores/GrabacionSofia.csv")
 datosMelany <- read.csv("sensores/GrabacionMelany.csv")
@@ -36,6 +40,24 @@ datosJuan <- read.csv("sensores/GrabacionJuanDavid.csv")
 datosMiguel <- read.csv("sensores/GrabacionMiguel.csv")
 
 ```
+
+Los datos fueron recolectados utilizando la aplicación *Arduino Science Journal*, que emplea los sensores del teléfono móvil para registrar las aceleraciones en los ejes X, Y y Z. Para este análisis se realizaron cuatro mediciones, de las cuales dos se llevaron a cabo mientras se ejecutaban las mismas actividades.
+
+## timestamp
+
+Marca temporal que indica el momento exacto en que fue tomada cada medición. Se encuentra en formato de milisegundos desde la época UNIX (1 de enero de 1970).
+
+## AccX
+
+Aceleración medida en el eje **X** del dispositivo móvil. Representa la fuerza de aceleración detectada en la dirección horizontal (izquierda-derecha) y se mide en metros por segundo al cuadrado (m/s²).
+
+## AccY
+
+Aceleración medida en el eje **Y** del dispositivo móvil. Representa la fuerza de aceleración en la dirección vertical (arriba-abajo), también en unidades de m/s².
+
+## AccZ
+
+Aceleración medida en el eje **Z** del dispositivo móvil. Corresponde a la aceleración perpendicular a la pantalla del dispositivo (profundidad), medida igualmente en m/s².
 
 ```{r}
 datosSofia <- datosSofia |> 
