@@ -2,10 +2,10 @@
 title: "Identificación de patrones en datos de aceleración obtenidos mediante el celular"
 subtitle: "Análisis de patrones de movimiento"
 author: 
-  name: Sofía Duque Rendón 
-  name: Melany Franco Marin 
-  name: Juan David Trejos
-  name: Miguel Ángel Vargas Valencia
+  - name: Sofía Duque Rendón 
+  - name: Melany Franco Marin 
+  - name: Juan David Trejos
+  - name: Miguel Ángel Vargas Valencia
 date: last-modified
 date-format: full
 lang: es
@@ -39,7 +39,19 @@ datosMiguel <- read.csv("sensores/GrabacionMiguel.csv")
 
 ```{r}
 datosSofia <- datosSofia |> 
-  mutate(fecha = as.POSIXct(as.numeric(timestamp) / 1000, origin = "1970-01-01"),
+  mutate(fecha = as.POSIXct(timestamp/1000),
+         AccT = sqrt(AccX^2 + AccY^2 + AccZ^2))
+
+datosMelany <- datosMelany |> 
+  mutate(fecha = as.POSIXct(timestamp/1000),
+         AccT = sqrt(AccX^2 + AccY^2 + AccZ^2))
+
+datosJuan <- datosJuan |> 
+  mutate(fecha = as.POSIXct(timestamp/1000),
+         AccT = sqrt(AccX^2 + AccY^2 + AccZ^2))
+
+datosMiguel <- datosMiguel |> 
+  mutate(fecha = as.POSIXct(timestamp/1000),
          AccT = sqrt(AccX^2 + AccY^2 + AccZ^2))
 ```
 
@@ -50,16 +62,16 @@ datosSofia <- datosSofia |>
 ### Gráfica sencilla con la aceleración en X
 
 ```{r}
-ggplot(datos1, aes(fecha, AccX)) +
+ggplot(datosMiguel, aes(fecha, AccX)) +
   geom_line()
 ```
 
 ```{r}
-gx <- ggplot(datos1, aes(fecha, AccX)) +
+gx <- ggplot(datosMiguel, aes(fecha, AccX)) +
   geom_line()
-gy <- ggplot(datos1, aes(fecha, AccX)) +
+gy <- ggplot(datosMiguel, aes(fecha, AccX)) +
   geom_line()
-gz <- ggplot(datos1, aes(fecha, AccX)) +
+gz <- ggplot(datosMiguel, aes(fecha, AccX)) +
   geom_line()
 ```
 
@@ -101,7 +113,7 @@ AccT = \sqrt{AccX^2 + AccY^2 + AccZ^2}
 $$
 
 ```{r}
-ggplot(datos1, aes(fecha, AccT)) +
+ggplot(datosMiguel, aes(fecha, AccT)) +
   geom_line()
 ```
 
@@ -110,18 +122,18 @@ ggplot(datos1, aes(fecha, AccT)) +
 ### Gráfica con una sección de la aceleración total.
 
 ```{r}
-datosP <- datos1 |> 
+datosMiguelP <- datosMiguel |> 
   filter(fecha > as.POSIXct("2025-05-06 09:20:00") &
          fecha < as.POSIXct("2025-05-06 09:20:10"))
 ```
 
 ```{r}
-ggplot(datosP, aes(fecha, AccT)) +
+ggplot(datosMiguelP, aes(fecha, AccT)) +
   geom_line()
 ```
 
 ```{r}
-ggplot(datosP |> na.omit(), aes(fecha, AccT)) +
+ggplot(datosMiguelP |> na.omit(), aes(fecha, AccT)) +
   geom_line()
 ```
 
@@ -130,7 +142,5 @@ ggplot(datosP |> na.omit(), aes(fecha, AccT)) +
 ## Resumen de todos los datos de aceleración
 
 ```{r}
-summary(datos1)
+summary(datosMiguel)
 ```
-
-![](img/celular_acelera.png){fig-align="center" width="500"}
