@@ -60,7 +60,7 @@ Aceleración medida en el eje **Y** del dispositivo móvil. Representa la fuerza
 Aceleración medida en el eje **Z** del dispositivo móvil. Corresponde a la aceleración perpendicular a la pantalla del dispositivo (profundidad), medida igualmente en m/s².
 
 ```{r}
-datosSofia <- datosSofia |> 
+datosSofia <- datosMelany |> 
   mutate(fecha = as.POSIXct(timestamp/1000),
          AccT = sqrt(AccX^2 + AccY^2 + AccZ^2))
 
@@ -79,7 +79,7 @@ datosMiguel <- datosMiguel |>
 
 \newpage
 
-## Gráficas exploratorias de X, Y y Z
+# Gráficas exploratorias de X, Y y Z
 
 ```{r}
 gxSofia <- ggplot(datosSofia, aes(fecha, AccX)) +
@@ -111,9 +111,63 @@ gzMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
   geom_line()
 ```
 
+## Gráfica X, Y y Z número 1
+
 ```{r}
 #| fig-height: 7
-(gx / gy / gz)
+(gxSofia / gySofia / gzSofia)
+```
+
+## Gráfica X, Y y Z número 2
+
+```{r}
+#| fig-height: 7
+(gxMelany / gyMelany / gzMelany)
+```
+
+## Gráfica X, Y y Z número 3
+
+```{r}
+#| fig-height: 7
+(gxJuan / gyJuan / gzJuan)
+```
+
+## Gráfica X, Y y Z número 4
+
+```{r}
+#| fig-height: 7
+(gxMiguel / gyMiguel / gzMiguel)
+```
+
+```{r}
+# Gráfico para eje X
+gxConjunta <- ggplot() +
+  geom_line(data = datosMelany, aes(x = fecha, y = AccX, color = "Melany")) +
+  geom_line(data = datosJuan, aes(x = fecha, y = AccX, color = "Juan")) +
+  labs(title = "Aceleración en el eje X", x = "Fecha", y = "AccX", color = "Persona") +
+  theme_minimal()
+
+# Gráfico para eje Y
+gyConjunta <- ggplot() +
+  geom_line(data = datosMelany, aes(x = fecha, y = AccY, color = "Melany")) +
+  geom_line(data = datosJuan, aes(x = fecha, y = AccY, color = "Juan")) +
+  labs(title = "Aceleración en el eje Y", x = "Fecha", y = "AccY", color = "Persona") +
+  theme_minimal()
+
+# Gráfico para eje Z
+gzConjunta <- ggplot() +
+  geom_line(data = datosMelany, aes(x = fecha, y = AccZ, color = "Melany")) +
+  geom_line(data = datosJuan, aes(x = fecha, y = AccZ, color = "Juan")) +
+  labs(title = "Aceleración en el eje Z", x = "Fecha", y = "AccZ", color = "Persona") +
+  theme_minimal()
+```
+
+## Gráfica grabación en conjunto
+
+Las grabaciones que se realizaron en conjunto fueron la número 2 y 3
+
+```{r}
+gxConjunta / gyConjunta / gzConjunta
 ```
 
 ### Gráfica de la aceleración total.
