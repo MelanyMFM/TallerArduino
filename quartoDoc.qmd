@@ -223,3 +223,95 @@ summary(datosJuan)
 
 summary(datosMiguel)
 ```
+
+## Análisis exploratorio de los datos
+```{r}
+datosMelany |>
+  summarise(
+    mediaX = mean(AccX, na.rm = TRUE),
+    sdX = sd(AccX, na.rm = TRUE),
+    mediaY = mean(AccY, na.rm = TRUE),
+    sdY = sd(AccY, na.rm = TRUE),
+    mediaZ = mean(AccZ, na.rm = TRUE),
+    sdZ = sd(AccZ, na.rm = TRUE),
+    mediaT = mean(AccT, na.rm = TRUE),
+    sdT = sd(AccT, na.rm = TRUE)
+  )
+```
+
+## Identificación actividad
+### Identificación cambio de actividad
+Antes de identificar el tipo de actividad que se está realizando en cierto momento,
+es crucial reconocer el cuando ocurren estos cambios.
+
+Para esto se propone una detección de cambios en la varianza de la aceleración total (AccT) usando ventanas móviles dado que cada actividad (caminar, estar quieto, montar en bus) genera un patrón distinto de variabilidad en la aceleración.
+
+#### Suavizar los datos antes del análisis
+Aplicamos una media móvil para suavizar AccT y reducir ruido:
+
+```{r}
+# Para no afectar el calculo de la media por los NAs, se llenan con el valor anterior
+datosMelany$AccT_sinNA <- na.locf(datosMelany$AccT, na.rm = FALSE)  # forward fill
+datosMelany$AccT_suavizada <- rollmean(datosMelany$AccT_sinNA, k = 20, fill = NA, align = "right")
+
+```
+
+```{r}
+datosMelany$AccT_suavizada <- rollmean(datosMelany$AccT_sinNA, k = 20,fill = NA, align = "right")
+```
+
+
+#### Calcular diferencia entre segmentos 
+```{r}
+# Agrupamos
+datosMelany <- datosMelany %>%
+  mutate(grupo = cut(as.POSIXct(fecha), breaks = "120 sec"))
+
+# Calculamos media y varianza por grupo
+resumen <- datosMelany %>%
+  group_by(grupo) %>%
+  summarise(
+    media = mean(AccT_suavizada, na.rm = TRUE),
+    varianza = var(AccT_suavizada, na.rm = TRUE),
+    rango = max(AccT_suavizada, na.rm = TRUE) - min(AccT_suavizada, na.rm = TRUE),
+    tiempo = first(fecha)
+  ) %>%
+  ungroup()
+
+```
+
+#### Detectar cambios entre grupos
+```{r}
+
+resumen$deltaMedia <- c(NA, abs(diff(resumen$media)))
+resumen$deltaVar   <- c(NA, abs(diff(resumen$varianza)))
+resumen$deltaRango <- c(NA, abs(diff(resumen$rango)))
+
+resumen$cambio <- #resumen$deltaMedia > 1.65 | 
+                  resumen$deltaVar > 3 | 
+                  resumen$deltaRango > 10
+# Valores elegidos con el comportamiento de las respectivas variables
+
+```
+
+```{r}
+
+dotchart(resumen$deltaVar)
+dotchart(resumen$deltaRango)
+```
+
+
+
+#### Gráfica
+```{r}
+ggplot(datosMelany, aes(x = fecha, y = AccT)) +
+  geom_line(color = "steelblue") +
+  geom_vline(data = resumen %>% filter(cambio),
+             aes(xintercept = as.numeric(tiempo)),
+             color = "red", size = 1, linetype = "dashed") +
+  labs(title = "Cambios de Actividad (Mejor Detectados)",
+       x = "Tiempo", y = "Aceleración Total (AccT)") +
+  theme_minimal(base_size = 14)
+
+```
+
