@@ -60,7 +60,7 @@ Aceleración medida en el eje **Y** del dispositivo móvil. Representa la fuerza
 Aceleración medida en el eje **Z** del dispositivo móvil. Corresponde a la aceleración perpendicular a la pantalla del dispositivo (profundidad), medida igualmente en m/s².
 
 ```{r}
-datosSofia <- datosMelany |> 
+datosSofia <- datosSofia |> 
   mutate(fecha = as.POSIXct(timestamp/1000),
          AccT = sqrt(AccX^2 + AccY^2 + AccZ^2))
 
@@ -225,6 +225,7 @@ summary(datosMiguel)
 ```
 
 ## Análisis exploratorio de los datos
+
 ```{r}
 datosMelany |>
   summarise(
@@ -240,13 +241,15 @@ datosMelany |>
 ```
 
 ## Identificación actividad
+
 ### Identificación cambio de actividad
-Antes de identificar el tipo de actividad que se está realizando en cierto momento,
-es crucial reconocer el cuando ocurren estos cambios.
+
+Antes de identificar el tipo de actividad que se está realizando en cierto momento, es crucial reconocer el cuando ocurren estos cambios.
 
 Para esto se propone una detección de cambios en la varianza de la aceleración total (AccT) usando ventanas móviles dado que cada actividad (caminar, estar quieto, montar en bus) genera un patrón distinto de variabilidad en la aceleración.
 
 #### Suavizar los datos antes del análisis
+
 Aplicamos una media móvil para suavizar AccT y reducir ruido:
 
 ```{r}
@@ -260,8 +263,8 @@ datosMelany$AccT_suavizada <- rollmean(datosMelany$AccT_sinNA, k = 20, fill = NA
 datosMelany$AccT_suavizada <- rollmean(datosMelany$AccT_sinNA, k = 20,fill = NA, align = "right")
 ```
 
+#### Calcular diferencia entre segmentos
 
-#### Calcular diferencia entre segmentos 
 ```{r}
 # Agrupamos
 datosMelany <- datosMelany %>%
@@ -281,6 +284,7 @@ resumen <- datosMelany %>%
 ```
 
 #### Detectar cambios entre grupos
+
 ```{r}
 
 resumen$deltaMedia <- c(NA, abs(diff(resumen$media)))
@@ -300,9 +304,8 @@ dotchart(resumen$deltaVar)
 dotchart(resumen$deltaRango)
 ```
 
-
-
 #### Gráfica
+
 ```{r}
 ggplot(datosMelany, aes(x = fecha, y = AccT)) +
   geom_line(color = "steelblue") +
@@ -314,4 +317,3 @@ ggplot(datosMelany, aes(x = fecha, y = AccT)) +
   theme_minimal(base_size = 14)
 
 ```
-
