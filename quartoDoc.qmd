@@ -27,6 +27,7 @@ library(tidyverse)
 library(gridExtra)
 library(patchwork)
 library(cowplot)
+library(zoo)
 ```
 
 # Introducción
@@ -84,30 +85,30 @@ datosMiguel <- datosMiguel |>
 ```{r}
 gxSofia <- ggplot(datosSofia, aes(fecha, AccX)) +
   geom_line()
-gySofia <- ggplot(datosSofia, aes(fecha, AccX)) +
+gySofia <- ggplot(datosSofia, aes(fecha, AccY)) +
   geom_line()
-gzSofia <- ggplot(datosSofia, aes(fecha, AccX)) +
+gzSofia <- ggplot(datosSofia, aes(fecha, AccZ)) +
   geom_line()
 
 gxMelany <- ggplot(datosMelany, aes(fecha, AccX)) +
   geom_line()
-gyMelany <- ggplot(datosMelany, aes(fecha, AccX)) +
+gyMelany <- ggplot(datosMelany, aes(fecha, AccY)) +
   geom_line()
-gzMelany <- ggplot(datosMelany, aes(fecha, AccX)) +
+gzMelany <- ggplot(datosMelany, aes(fecha, AccZ)) +
   geom_line()
 
 gxJuan <- ggplot(datosJuan, aes(fecha, AccX)) +
   geom_line()
-gyJuan <- ggplot(datosJuan, aes(fecha, AccX)) +
+gyJuan <- ggplot(datosJuan, aes(fecha, AccY)) +
   geom_line()
-gzJuan <- ggplot(datosJuan, aes(fecha, AccX)) +
+gzJuan <- ggplot(datosJuan, aes(fecha, AccZ)) +
   geom_line()
 
 gxMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
   geom_line()
-gyMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
+gyMiguel <- ggplot(datosMiguel, aes(fecha, AccY)) +
   geom_line()
-gzMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
+gzMiguel <- ggplot(datosMiguel, aes(fecha, AccZ)) +
   geom_line()
 ```
 
@@ -118,6 +119,68 @@ gzMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
 (gxSofia / gySofia / gzSofia)
 ```
 
+### Análisis de los intervalos de tiempo del sensor para los datos de Sofía.
+
+resultadosSofia \<- analizar_intervalos_sensor(datosSofia)
+
+```{r}
+analizar_intervalos_sensor <- function(datos, 
+                                       col_timestamp = "timestamp", 
+                                       umbral_percentil = 0.95, 
+                                       titulo_grafico = "Distribución de los Intervalos de Muestreo del Sensor") {
+  
+  # Calcular intervalos entre mediciones consecutivas en segundos
+  intervalos_s <- c(NA, diff(datos[[col_timestamp]])) / 1000
+  
+  # Obtener estadísticas de los intervalos válidos (excluyendo el primer NA)
+  intervalos_validos <- intervalos_s[!is.na(intervalos_s)]
+  resumen <- summary(intervalos_validos)
+  
+  print("----- Resumen numérico de los intervalos de tiempo (segundos) -----")
+  print(resumen)
+  
+  # Detectar interrupciones o "gaps" en los datos
+  umbral_gap_s <- quantile(intervalos_validos, probs = umbral_percentil, na.rm = TRUE)
+  gaps_detectados <- which(intervalos_validos > umbral_gap_s)
+  porcentaje_gaps <- length(gaps_detectados) / length(intervalos_validos) * 100
+  
+  cat("\n--- Detección de Interrupciones ---\n")
+  cat("Umbral (Percentil", umbral_percentil * 100, "%):", umbral_gap_s, "segundos\n")
+  cat("Número de interrupciones detectadas:", length(gaps_detectados), "\n")
+  cat("Porcentaje de interrupciones sobre el total de mediciones:", round(porcentaje_gaps, 2), "%\n\n")
+  
+  #  Generar el gráfico de distribución
+  grafico <- ggplot(data.frame(intervalos = intervalos_validos), aes(x = intervalos)) +
+    geom_histogram(aes(y = after_stat(density)), binwidth = 0.001, fill = "skyblue", color = "black") +
+    geom_density(alpha = .2, fill = "#FF6666") +
+    labs(
+      title = titulo_grafico,
+      x = "Tiempo entre mediciones (segundos)",
+      y = "Densidad"
+    ) +
+    theme_minimal()
+  
+  # Devolver una lista con los resultados y el gráfico
+  resultados <- list(
+    resumen_numerico = resumen,
+    umbral_gap_s = umbral_gap_s,
+    numero_gaps = length(gaps_detectados),
+    porcentaje_gaps = porcentaje_gaps,
+    grafico = grafico
+  )
+  
+  return(resultados)
+}
+
+resultadosSofia <- analizar_intervalos_sensor(datosSofia)
+```
+
+El análisis de los intervalos de tiempo para los datos de Sofía revela que el sensor operó con una **alta consistencia**. La mediana del intervalo entre mediciones fue de **0.067 segundos** por cada dato de acelaración para cada eje.
+
+Se definió un umbral de **0.069 segundos** (el percentil 95) para identificar las pausas más significativas. Se detectaron 1855 intervalos (el 5% más largo) que superaron este umbral, con una pausa máxima registrada de 0.097 segundos. La estabilidad del muestreo es notable, ya que el 96% de los datos se registraron con un intervalo de 0.069 segundos o menos.
+
+Estas pausas más largas, aunque presentes, son infrecuentes y probablemente se deban a procesos del sistema operativo del móvil. Dada la alta consistencia general, estas irregularidades no deberían impactar de forma significativa el análisis posterior.
+
 ## Gráfica X, Y y Z número 2
 
 ```{r}
@@ -125,12 +188,30 @@ gzMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
 (gxMelany / gyMelany / gzMelany)
 ```
 
+```{r}
+resultadosSofia <- analizar_intervalos_sensor(datosMelany)
+```
+
+El análisis de los intervalos de tiempo para los datos de Melany revela que el sensor operó con una **excelente consistencia**. La mediana del intervalo entre mediciones fue de **0.019 segundos** por cada dato de acelaración para cada eje.
+
+Se definió un umbral de **0.021 segundos** (el percentil 95) para identificar las pausas más significativas. Se detectaron 1855 intervalos (el 5% más largo) que superaron este umbral, con una pausa máxima registrada de 0.293 segundos. La estabilidad del muestreo es notable, ya que el 98% de los datos se registraron con un intervalo de 0.021 segundos o menos.
+
+Estas pausas más largas, aunque presentes, son infrecuentes y probablemente se deban a procesos del sistema operativo del móvil. Dada la alta consistencia general, estas irregularidades no deberían impactar de forma significativa el análisis posterior.
+
 ## Gráfica X, Y y Z número 3
 
 ```{r}
 #| fig-height: 7
 (gxJuan / gyJuan / gzJuan)
 ```
+```{r}
+resultadosSofia <- analizar_intervalos_sensor(datosJuan)
+```
+El análisis de los intervalos de tiempo para los datos de Juan revela que el sensor operó con una **buena consistencia**. La mediana del intervalo entre mediciones fue de **0.067 segundos** por cada dato de acelaración para cada eje.
+
+Se definió un umbral de **0.072 segundos** (el percentil 95) para identificar las pausas más significativas. Se detectaron 2598 intervalos (el 5% más largo) que superaron este umbral, con una pausa máxima registrada de 0.77 segundos. La estabilidad del muestreo es notable, ya que el 98% de los datos se registraron con un intervalo de 0.072 segundos o menos.
+
+Estas pausas más largas, aunque presentes, son infrecuentes y probablemente se deban a procesos del sistema operativo del móvil. Dada la alta consistencia general, estas irregularidades no deberían impactar de forma significativa el análisis posterior.
 
 ## Gráfica X, Y y Z número 4
 
@@ -138,6 +219,15 @@ gzMiguel <- ggplot(datosMiguel, aes(fecha, AccX)) +
 #| fig-height: 7
 (gxMiguel / gyMiguel / gzMiguel)
 ```
+
+```{r}
+resultadosSofia <- analizar_intervalos_sensor(datosMiguel)
+```
+El análisis de los intervalos de tiempo para esta toma de datos revela un comportamiento dual: periodos de muestreo consistente afectados por interrupciones significativas y anomalías. La mediana del intervalo entre mediciones fue de **0.065 segundos**
+
+Sin embargo, la integridad de la serie se ve comprometida por pausas extremas. Se definió un umbral de 0.069 segundos (el percentil 95) para identificar las interrupciones más notables. Aunque el 96% de los intervalos están por debajo de este valor, el 3.02% restante contiene valores atípicos extremos, incluyendo una pausa máxima registrada de 83.2 segundos. Esta interrupción de más de un minuto no es una simple pausa, sino que divide la grabación en, al menos, dos sesiones independientes.
+
+Adicionalmente, se observa un comportamiento anómalo en los intervalos más cortos, con un primer cuartil de solo 0.001 segundos, lo que sugiere posibles errores de medición o un modo de operación del sensor no uniforme.
 
 ```{r}
 # Gráfico para eje X
@@ -169,6 +259,10 @@ Las grabaciones que se realizaron en conjunto fueron la número 2 y 3
 ```{r}
 gxConjunta / gyConjunta / gzConjunta
 ```
+
+En las mediciones realizadas de manera simultánea por Melany y Juan, se observa una notable correspondencia en los patrones de aceleración registrados en los tres ejes (X, Y y Z). Sin embargo, en varias secciones de las gráficas se identifican valores similares pero en dirección opuesta, lo que sugiere que uno de los celulares pudo haber estado orientado en sentido inverso al otro durante la grabación.
+
+Adicionalmente, se evidencia que los datos recolectados por Melany presentan mayores variaciones en la aceleración, lo cual puede deberse a movimientos más intensos o bruscos durante la actividad registrada. A pesar de esta diferencia en la magnitud, ambas series mantienen cierta sincronía y regularidad en los cambios de dirección, lo que refuerza la idea de que ambos dispositivos estaban captando el mismo conjunto de eventos físicos, aunque desde posiciones o orientaciones distintas.
 
 ### Gráfica de la aceleración total.
 
