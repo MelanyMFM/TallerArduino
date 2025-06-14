@@ -521,11 +521,11 @@ tomar los datos desde el mismo dispositivo movil.
 
 ##bibliografia:
 
-library(tidyverse)
-library(gridExtra)
-library(patchwork) 
-library(cowplot)
-library(zoo) 
-library(lubridate) 
-library(ggplot2)
-chat gpt
+library tidyverse.
+library gridExtra.
+library patchwork.
+library cowplot.
+library zoo.
+library lubridate.
+library ggplot2.
+chat gpt.
