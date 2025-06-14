@@ -206,9 +206,11 @@ Estas pausas más largas, aunque presentes, son infrecuentes y probablemente se 
 #| fig-height: 7
 (gxJuan / gyJuan / gzJuan)
 ```
+
 ```{r}
 resultadosSofia <- analizar_intervalos_sensor(datosJuan)
 ```
+
 El análisis de los intervalos de tiempo para los datos de Juan revela que el sensor operó con una **buena consistencia**. La mediana del intervalo entre mediciones fue de **0.067 segundos** por cada dato de acelaración para cada eje.
 
 Se definió un umbral de **0.072 segundos** (el percentil 95) para identificar las pausas más significativas. Se detectaron 2598 intervalos (el 5% más largo) que superaron este umbral, con una pausa máxima registrada de 0.77 segundos. La estabilidad del muestreo es notable, ya que el 98% de los datos se registraron con un intervalo de 0.072 segundos o menos.
@@ -225,6 +227,7 @@ Estas pausas más largas, aunque presentes, son infrecuentes y probablemente se 
 ```{r}
 resultadosSofia <- analizar_intervalos_sensor(datosMiguel)
 ```
+
 El análisis de los intervalos de tiempo para esta toma de datos revela un comportamiento dual: periodos de muestreo consistente afectados por interrupciones significativas y anomalías. La mediana del intervalo entre mediciones fue de **0.065 segundos**
 
 Sin embargo, la integridad de la serie se ve comprometida por pausas extremas. Se definió un umbral de 0.069 segundos (el percentil 95) para identificar las interrupciones más notables. Aunque el 96% de los intervalos están por debajo de este valor, el 3.02% restante contiene valores atípicos extremos, incluyendo una pausa máxima registrada de 83.2 segundos. Esta interrupción de más de un minuto no es una simple pausa, sino que divide la grabación en, al menos, dos sesiones independientes.
@@ -320,8 +323,6 @@ summary(datosJuan)
 summary(datosMiguel)
 ```
 
-
-
 ## Identificación actividad
 
 ### Suavizar datos por intervalos
@@ -361,8 +362,6 @@ resumen <- datosMelany %>%
 
 ```
 
-
-
 ### Inferencia de actividades
 
 ```{r}
@@ -370,15 +369,13 @@ resumen |>
   select(tiempo, media, varianza, rango)
 ```
 
-
-
 Basandonos en estas medidas del resumen se categoriza la posible actividad que se está realizando de la siguiente forma:
 
-Mayor varianza -> caminando
+Mayor varianza -\> caminando
 
-Varianza media-baja -> vehículo
+Varianza media-baja -\> vehículo
 
-Varianza cercana a cero -> en reposo
+Varianza cercana a cero -\> en reposo
 
 ```{r}
 resumen <- resumen %>%
@@ -390,8 +387,6 @@ resumen <- resumen %>%
   ))
 
 ```
-
-
 
 ```{r}
 
@@ -417,8 +412,8 @@ ggplot(datosMelanySegmentado, aes(x = tiempo, y = AccT, color = actividad)) +
   theme_minimal()
 ```
 
-
 Definicion de funcion para aplicarla a otras grabaciones con los pasos ya hechos
+
 ```{r}
 identificar_actividad <- function(data, suavizado_k = 20, valor_inicial = 9.869162) {
   # Paso 1: Rellenar NAs con el valor anterior
@@ -485,6 +480,7 @@ identificar_actividad <- function(data, suavizado_k = 20, valor_inicial = 9.8691
 ```
 
 Prueba con otros datos
+
 ```{r}
 
 resultado <- identificar_actividad(datosJuan)
@@ -499,6 +495,37 @@ resultado$grafico
 
 ```
 
+##Conclusiones:
 
+la media nos ayuda a ver el comportamiento de los datos para poder identificar los movimientos de cada actividad.
 
+la varianza nos muestra las medidas de cambios que tiene cada actividad.
 
+las graficas nos permiten reconocer patrones de movimiento de la actividad realizada.
+
+algunas de las actividades generan mas variabilidad en los patrones de movimiento.
+
+las subidas y bajadas bruscas de los movientos pueden identificar el cambio de actividad.
+
+las actividades mas tranquilas tienen patrones de movimiento mas constantes.
+
+los sensores de movimiento cambian segun la actividad y la posicion del dispositivo movil.
+
+##Recomendaciones:
+
+tener presente el contexto de las actividades realizadas en la toma de datos de movimento para tener un mejor analisis.
+
+tomar los datos con el tiempo suficiente para poder observar los cambios y patrones de moviento.
+
+tomar los datos desde el mismo dispositivo movil.
+
+##bibliografia:
+
+library(tidyverse)
+library(gridExtra)
+library(patchwork) 
+library(cowplot)
+library(zoo) 
+library(lubridate) 
+library(ggplot2)
+chat gpt
