@@ -28,6 +28,8 @@ library(gridExtra)
 library(patchwork)
 library(cowplot)
 library(zoo)
+library(lubridate)
+library(ggplot2)
 ```
 
 # Introducción
@@ -318,35 +320,16 @@ summary(datosJuan)
 summary(datosMiguel)
 ```
 
-## Análisis exploratorio de los datos
 
-```{r}
-datosMelany |>
-  summarise(
-    mediaX = mean(AccX, na.rm = TRUE),
-    sdX = sd(AccX, na.rm = TRUE),
-    mediaY = mean(AccY, na.rm = TRUE),
-    sdY = sd(AccY, na.rm = TRUE),
-    mediaZ = mean(AccZ, na.rm = TRUE),
-    sdZ = sd(AccZ, na.rm = TRUE),
-    mediaT = mean(AccT, na.rm = TRUE),
-    sdT = sd(AccT, na.rm = TRUE)
-  )
-```
 
 ## Identificación actividad
 
-### Identificación cambio de actividad
-
-Antes de identificar el tipo de actividad que se está realizando en cierto momento, es crucial reconocer el cuando ocurren estos cambios.
-
-Para esto se propone una detección de cambios en la varianza de la aceleración total (AccT) usando ventanas móviles dado que cada actividad (caminar, estar quieto, montar en bus) genera un patrón distinto de variabilidad en la aceleración.
-
-#### Suavizar los datos antes del análisis
+### Suavizar datos por intervalos
 
 Aplicamos una media móvil para suavizar AccT y reducir ruido:
 
 ```{r}
+
 # Para no afectar el calculo de la media por los NAs, se llenan con el valor anterior
 datosMelany$AccT_sinNA <- na.locf(datosMelany$AccT, na.rm = FALSE)  # forward fill
 datosMelany$AccT_suavizada <- rollmean(datosMelany$AccT_sinNA, k = 20, fill = NA, align = "right")
@@ -354,7 +337,8 @@ datosMelany$AccT_suavizada <- rollmean(datosMelany$AccT_sinNA, k = 20, fill = NA
 ```
 
 ```{r}
-datosMelany$AccT_suavizada <- rollmean(datosMelany$AccT_sinNA, k = 20,fill = NA, align = "right")
+# Llenar los NAs iniciales con la media
+datosMelany$AccT_suavizada[is.na(datosMelany$AccT_suavizada)] <- 9.869162
 ```
 
 #### Calcular diferencia entre segmentos
@@ -362,7 +346,7 @@ datosMelany$AccT_suavizada <- rollmean(datosMelany$AccT_sinNA, k = 20,fill = NA,
 ```{r}
 # Agrupamos
 datosMelany <- datosMelany %>%
-  mutate(grupo = cut(as.POSIXct(fecha), breaks = "120 sec"))
+  mutate(grupo = cut(as.POSIXct(fecha), breaks = "60 sec"))
 
 # Calculamos media y varianza por grupo
 resumen <- datosMelany %>%
@@ -377,37 +361,144 @@ resumen <- datosMelany %>%
 
 ```
 
-#### Detectar cambios entre grupos
+
+
+### Inferencia de actividades
+
+```{r}
+resumen |>
+  select(tiempo, media, varianza, rango)
+```
+
+
+
+Basandonos en estas medidas del resumen se categoriza la posible actividad que se está realizando de la siguiente forma:
+
+Mayor varianza -> caminando
+
+Varianza media-baja -> vehículo
+
+Varianza cercana a cero -> en reposo
+
+```{r}
+resumen <- resumen %>%
+  mutate(actividad = case_when(
+    varianza > 1.25         ~ "Caminando",            
+    varianza > 0.025         ~ "Vehículo",               
+    varianza <= 0.025       ~ "Reposo",                 
+    TRUE                   ~ "Reposo"     
+  ))
+
+```
+
+
 
 ```{r}
 
-resumen$deltaMedia <- c(NA, abs(diff(resumen$media)))
-resumen$deltaVar   <- c(NA, abs(diff(resumen$varianza)))
-resumen$deltaRango <- c(NA, abs(diff(resumen$rango)))
+resumen$tiempo_inicio <- ymd_hms(resumen$tiempo)
 
-resumen$cambio <- #resumen$deltaMedia > 1.65 | 
-                  resumen$deltaVar > 3 | 
-                  resumen$deltaRango > 10
-# Valores elegidos con el comportamiento de las respectivas variables
+datosMelanySegmentado <- datosMelany %>%
+  mutate(tiempo = ymd_hms(fecha)) %>%
+  mutate(actividad = cut(tiempo,  # aquí el cambio importante
+                         breaks = c(resumen$tiempo_inicio, max(tiempo) + 1),
+                         labels = resumen$actividad,
+                         include.lowest = TRUE))
+
 
 ```
 
 ```{r}
 
-dotchart(resumen$deltaVar)
-dotchart(resumen$deltaRango)
+ggplot(datosMelanySegmentado, aes(x = tiempo, y = AccT, color = actividad)) +
+  geom_line(size = 0.4) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(title = "Actividades Detectadas Automáticamente",
+       x = "Tiempo", y = "Aceleración Total (AccT)", color = "Actividad") +
+  theme_minimal()
 ```
 
-#### Gráfica
 
+Definicion de funcion para aplicarla a otras grabaciones con los pasos ya hechos
 ```{r}
-ggplot(datosMelany, aes(x = fecha, y = AccT)) +
-  geom_line(color = "steelblue") +
-  geom_vline(data = resumen %>% filter(cambio),
-             aes(xintercept = as.numeric(tiempo)),
-             color = "red", size = 1, linetype = "dashed") +
-  labs(title = "Cambios de Actividad (Mejor Detectados)",
-       x = "Tiempo", y = "Aceleración Total (AccT)") +
-  theme_minimal(base_size = 14)
+identificar_actividad <- function(data, suavizado_k = 20, valor_inicial = 9.869162) {
+  # Paso 1: Rellenar NAs con el valor anterior
+  data$AccT_sinNA <- zoo::na.locf(data$AccT, na.rm = FALSE)
+  
+  # Paso 2: Suavizar con media móvil
+  data$AccT_suavizada <- zoo::rollmean(data$AccT_sinNA, k = suavizado_k, fill = NA, align = "right")
+  data$AccT_suavizada[is.na(data$AccT_suavizada)] <- valor_inicial
+  
+  # Paso 3: Crear grupos por minuto
+  data <- data %>%
+    mutate(grupo = cut(as.POSIXct(fecha), breaks = "60 sec"))
+  
+  # Paso 4: Calcular medidas resumen por grupo
+  resumen <- data %>%
+    group_by(grupo) %>%
+    summarise(
+      media = mean(AccT_suavizada, na.rm = TRUE),
+      varianza = var(AccT_suavizada, na.rm = TRUE),
+      rango = max(AccT_suavizada, na.rm = TRUE) - min(AccT_suavizada, na.rm = TRUE),
+      tiempo = first(fecha),
+      .groups = "drop"
+    )
+  
+  # Paso 5: Clasificar actividad según la varianza
+  resumen <- resumen %>%
+    mutate(actividad = case_when(
+      varianza > 1.25     ~ "Caminando",
+      varianza > 0.025    ~ "Vehículo",
+      varianza <= 0.025   ~ "Reposo",
+      TRUE                ~ "Reposo"
+    ))
+  
+  # Paso 6: Convertir tiempos
+  resumen$tiempo_inicio <- ymd_hms(resumen$tiempo)
+  data <- data %>%
+    mutate(tiempo = ymd_hms(fecha))
+  
+  # Paso 7: Asignar actividad a cada fila según intervalo
+  data <- data %>%
+    mutate(actividad = cut(
+      tiempo,
+      breaks = c(resumen$tiempo_inicio, max(tiempo) + 1),
+      labels = resumen$actividad,
+      include.lowest = TRUE
+    ))
+  
+  # Paso 8: Graficar resultado
+  g <- ggplot(data, aes(x = tiempo, y = AccT, color = actividad)) +
+    geom_line(size = 0.4) +
+    scale_color_brewer(palette = "Dark2") +
+    labs(
+      title = "Actividades Detectadas Automáticamente",
+      x = "Tiempo", y = "Aceleración Total (AccT)", color = "Actividad"
+    ) +
+    theme_minimal()
+  
+  return(list(
+    datos_segmentados = data,
+    resumen = resumen,
+    grafico = g
+  ))
+}
+```
+
+Prueba con otros datos
+```{r}
+
+resultado <- identificar_actividad(datosJuan)
+
+resultado$grafico
+
+# Ver el resumen
+#head(resultado$resumen)
+
+# Ver los datos originales con actividades asignadas
+#head(resultado$datos_segmentados)
 
 ```
+
+
+
+
