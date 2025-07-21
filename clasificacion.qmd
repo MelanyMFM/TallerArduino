@@ -13,26 +13,26 @@ library(ggplot2)
 
 
 ```{r}
-
 clasificar_transporte <- function(df, tamano_bloque = 250) {
-  # Paso 1: Magnitud y relleno de NA
+  # Paso 1: Calcular magnitud y rellenar NA
   df$acc_mag <- sqrt(df$AccX^2 + df$AccY^2 + df$AccZ^2)
-  df$acc_mag <- na.locf(df$acc_mag, na.rm = FALSE)
+  df$acc_mag <- zoo::na.locf(df$acc_mag, na.rm = FALSE)
   
-  # Paso 2: Normalizar
+  # Paso 2: Normalizar magnitud
   normalizar_min_max <- function(x) {
     (x - min(x, na.rm=TRUE)) / (max(x, na.rm=TRUE) - min(x, na.rm=TRUE))
   }
   df$acc_mag_norm <- normalizar_min_max(df$acc_mag)
   
-  # Paso 3: Hora del día
+  # Paso 3: Agregar columna de hora
   df$hora <- as.POSIXct(df$timestamp / 1000, origin = "1970-01-01", tz = "America/Bogota")
   
   # Paso 4: Inicializar columnas
   n <- nrow(df)
   n_bloques <- ceiling(n / tamano_bloque)
   df$transporte <- NA
-  
+  df$varianza_bloque <- NA  # nueva columna
+
   for (i in 1:n_bloques) {
     start_idx <- (i - 1) * tamano_bloque + 1
     end_idx <- min(i * tamano_bloque, n)
@@ -40,25 +40,29 @@ clasificar_transporte <- function(df, tamano_bloque = 250) {
     
     if (all(is.na(segmento))) next
     
-    # Métricas
+    # Métricas del bloque
     sd_val <- sd(segmento)
     iqr_val <- IQR(segmento)
+    var_val <- var(segmento)
     
+    # Histograma para entropía
     hist_vals <- hist(segmento, plot = FALSE, breaks = 20)
     probs <- hist_vals$counts / sum(hist_vals$counts)
     probs <- probs[probs > 0]
-    entropia_val <- entropy.empirical(probs, unit = "log2")
+    entropia_val <- entropy::entropy.empirical(probs, unit = "log2")
     
-    # Clasificación
-    clase <- if (sd_val > 0.012 && iqr_val > 0.018) {
+    # Clasificación por sd + iqr
+    clase <- if ((sd_val > 0.012 && iqr_val > 0.018) || var_val > 0.007) {
       "Caminando"
-    } else if (sd_val > 0.002 && iqr_val > 0.004) {
+    } else if ((sd_val > 0.002 && iqr_val > 0.004) || var_val > 0.000008) {
       "Vehículo"
     } else {
       "Quieto"
     }
     
+    # Guardar resultados
     df$transporte[start_idx:end_idx] <- clase
+    df$varianza_bloque[start_idx:end_idx] <- var_val
   }
   
   return(df)
@@ -70,9 +74,7 @@ clasificar_transporte <- function(df, tamano_bloque = 250) {
 
 ```{r}
 grabacion1 <- read.csv("Sensores/GrabacionMelany.csv")
-grabacion1_clasificada <- clasificar_transporte(grabacion1, tamano_bloque = 500)
-
-
+grabacion1_clasificada <- clasificar_transporte(grabacion1, tamano_bloque = 1000)
 ```
 
 ```{r}
@@ -86,8 +88,57 @@ ggplot(grabacion1_clasificada, aes(x = hora, y = acc_mag, color = transporte)) +
   ) +
   scale_color_manual(values = c("Quieto" = "blue", "Caminando" = "green", "Vehículo" = "red")) +
   theme_minimal()
+```
+```{r}
+grabacion2 <- read.csv("Sensores/GrabacionMiguel.csv")
+grabacion2_clasificada <- clasificar_transporte(grabacion2, tamano_bloque = 1000)
+```
 
 
+```{r}
+ggplot(grabacion2_clasificada, aes(x = hora, y = acc_mag, color = transporte)) +
+  geom_point(size = 0.5, alpha = 0.5) +  # o geom_line()
+  labs(
+    title = "Magnitud de aceleración vs Hora",
+    x = "Hora del día",
+    y = "Magnitud de Aceleración",
+    color = "Transporte"
+  ) +
+  scale_color_manual(values = c("Quieto" = "blue", "Caminando" = "green", "Vehículo" = "red")) +
+  theme_minimal()
+```
+```{r}
+grabacion3 <- read.csv("Sensores/GrabacionJuanDavid.csv")
+grabacion3_clasificada <- clasificar_transporte(grabacion3, tamano_bloque = 1000)
+```
 
+```{r}
+ggplot(grabacion3_clasificada, aes(x = hora, y = acc_mag, color = transporte)) +
+  geom_point(size = 0.5, alpha = 0.5) +  # o geom_line()
+  labs(
+    title = "Magnitud de aceleración vs Hora",
+    x = "Hora del día",
+    y = "Magnitud de Aceleración",
+    color = "Transporte"
+  ) +
+  scale_color_manual(values = c("Quieto" = "blue", "Caminando" = "green", "Vehículo" = "red")) +
+  theme_minimal()
+```
+```{r}
+grabacion4 <- read.csv("Sensores/GrabacionSofia.csv")
+grabacion4_clasificada <- clasificar_transporte(grabacion4, tamano_bloque = 1000)
+```
+
+```{r}
+ggplot(grabacion4_clasificada, aes(x = hora, y = acc_mag, color = transporte)) +
+  geom_point(size = 0.5, alpha = 0.5) +  # o geom_line()
+  labs(
+    title = "Magnitud de aceleración vs Hora",
+    x = "Hora del día",
+    y = "Magnitud de Aceleración",
+    color = "Transporte"
+  ) +
+  scale_color_manual(values = c("Quieto" = "blue", "Caminando" = "green", "Vehículo" = "red")) +
+  theme_minimal()
 ```
 
