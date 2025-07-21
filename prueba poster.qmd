@@ -82,35 +82,170 @@ procesar_aceleracion <- function(df, tamano_bloque = 50, nombre = "dataset") {
 ```
 
 
-```{r}
 
+
+## Caminando
+```{r}
 caminando1 <- read.csv("SensoresExtra/caminando1.csv")
-bus1 <- read.csv("SensoresExtra/bus1.csv")
-carro1 <- read.csv("SensoresExtra/Carro Grabaci_n 1.csv")
-bicicleta1 <- read.csv("SensoresExtra/Bicicleta Grabaci_n 1.csv")
+caminando2 <- read.csv("SensoresExtra/caminando2.csv")
+caminando3 <- read.csv("SensoresExtra/caminando3.csv")
+caminando4 <- read.csv("SensoresExtra/caminando4.csv")
 
 caminando1_proc <- procesar_aceleracion(caminando1, tamano_bloque = 50, nombre = "Caminando 1")
-bus1_proc <- procesar_aceleracion(bus1, tamano_bloque = 50, nombre = "Bus 1")
-carro1_proc <- procesar_aceleracion(carro1, tamano_bloque = 50, nombre = "Carro 1")
-bicicleta1_proc <- procesar_aceleracion(bicicleta1, tamano_bloque = 50, nombre = "Bicicleta 1")
+caminando2_proc <- procesar_aceleracion(caminando2, tamano_bloque = 50, nombre = "Caminando 2")
+caminando3_proc <- procesar_aceleracion(caminando3, tamano_bloque = 50, nombre = "Caminando 3")
+caminando4_proc <- procesar_aceleracion(caminando4, tamano_bloque = 50, nombre = "Caminando 4")
 ```
 ```{r}
-plot(caminando1_proc$sd_bloque, type = "l", col = "blue", ylim = range(c(caminando1_proc$sd_bloque, bus1_proc$sd_bloque, carro1_proc$sd_bloque, bicicleta1_proc$sd_bloque), na.rm=TRUE),
-     main = "Comparación de SD por bloque", xlab = "Índice", ylab = "SD")
-lines(bus1_proc$sd_bloque, col = "red")
+plot(caminando1_proc$sd_bloque, type = "l", col = "blue", ylim = range(c(caminando1_proc$sd_bloque, caminando2_proc$sd_bloque, caminando3_proc$sd_bloque, caminando4_proc$sd_bloque), na.rm=TRUE),
+     main = "Comparación de SD por bloque caminando", xlab = "Índice", ylab = "SD")
+lines(caminando2_proc$sd_bloque, col = "red")
+lines(caminando3_proc$sd_bloque, col = "green")
+lines(caminando4_proc$sd_bloque, col = "yellow")
+legend("topright", legend = c("Caminando1", "Caminando2", "Caminando3", "Caminando4"), col = c("blue", "red", "green", "yellow"), lty = 1)
+```
+
+```{r}
+plot(caminando1_proc$entropia_bloque, type = "l", col = "blue",
+     ylim = range(c(
+       caminando1_proc$entropia_bloque,
+       caminando2_proc$entropia_bloque,
+       caminando3_proc$entropia_bloque,
+       caminando4_proc$entropia_bloque
+     ), na.rm = TRUE),
+     main = "Comparación de Entropía por bloque - Caminando",
+     xlab = "Índice", ylab = "Entropía")
+
+lines(caminando2_proc$entropia_bloque, col = "red")
+lines(caminando3_proc$entropia_bloque, col = "green")
+lines(caminando4_proc$entropia_bloque, col = "orange")
+
+legend("topright",
+       legend = c("Caminando1", "Caminando2", "Caminando3", "Caminando4"),
+       col = c("blue", "red", "green", "orange"),
+       lty = 1)
+
+```
+
+```{r}
+plot(caminando1_proc$pendiente1_bloque, type = "l", col = "blue",
+     ylim = range(c(
+       caminando1_proc$pendiente1_bloque,
+       caminando2_proc$pendiente1_bloque,
+       caminando3_proc$pendiente1_bloque,
+       caminando4_proc$pendiente1_bloque
+     ), na.rm = TRUE),
+     main = "Comparación de Pendiente (1ra derivada) por bloque - Caminando",
+     xlab = "Índice", ylab = "Pendiente media")
+
+lines(caminando2_proc$pendiente1_bloque, col = "red")
+lines(caminando3_proc$pendiente1_bloque, col = "green")
+lines(caminando4_proc$pendiente1_bloque, col = "orange")
+
+legend("topright",
+       legend = c("Caminando1", "Caminando2", "Caminando3", "Caminando4"),
+       col = c("blue", "red", "green", "orange"),
+       lty = 1)
+
+```
+
+## Vehiculos
+
+```{r}
+bus1 <- read.csv("SensoresExtra/bus1.csv")
+bicicleta1 <- read.csv("SensoresExtra/Bicicleta Grabaci_n 1.csv")
+carro1 <- read.csv("SensoresExtra/Carro Grabaci_n 1.csv")
+moto2 <- read.csv("SensoresExtra/moto2.csv")
+
+bus1_proc <- procesar_aceleracion(bus1, tamano_bloque = 50, nombre = "bus 1")
+bicicleta1_proc <- procesar_aceleracion(bicicleta1, tamano_bloque = 50, nombre = "bicicleta1")
+carro1_proc <- procesar_aceleracion(carro1, tamano_bloque = 50, nombre = "carro1")
+moto2_proc <- procesar_aceleracion(moto2, tamano_bloque = 50, nombre = "moto2")
+```
+
+```{r}
+plot(bus1_proc$sd_bloque, type = "l", col = "blue",
+     ylim = range(c(
+       bus1_proc$sd_bloque,
+       bicicleta1_proc$sd_bloque,
+       carro1_proc$sd_bloque,
+       moto2_proc$sd_bloque
+     ), na.rm = TRUE),
+     main = "Comparación de SD por bloque - Medios de transporte",
+     xlab = "Índice", ylab = "Desviación estándar")
+
+lines(bicicleta1_proc$sd_bloque, col = "red")
 lines(carro1_proc$sd_bloque, col = "green")
-lines(bicicleta1_proc$sd_bloque, col = "yellow")
-legend("topright", legend = c("Caminando", "Bus", "Carro", "Bicicleta"), col = c("blue", "red", "green", "yellow"), lty = 1)
+lines(moto2_proc$sd_bloque, col = "orange")
+
+legend("topright",
+       legend = c("Bus", "Bicicleta", "Carro", "Moto"),
+       col = c("blue", "red", "green", "orange"),
+       lty = 1)
 
 ```
 
 ```{r}
-plot(caminando1_proc$entropia_bloque, type = "l", col = "blue", ylim = range(c(caminando1_proc$entropia_bloque, bus1_proc$entropia_bloque, carro1_proc$entropia_bloque), na.rm=TRUE),
-     main = "Comparación de entropia por bloque", xlab = "Índice", ylab = "SD")
-lines(bus1_proc$entropia_bloque, col = "red")
+plot(bus1_proc$entropia_bloque, type = "l", col = "blue",
+     ylim = range(c(
+       bus1_proc$entropia_bloque,
+       bicicleta1_proc$entropia_bloque,
+       carro1_proc$entropia_bloque,
+       moto2_proc$entropia_bloque
+     ), na.rm = TRUE),
+     main = "Comparación de Entropía por bloque - Medios de transporte",
+     xlab = "Índice", ylab = "Entropía (Shannon)")
+
+lines(bicicleta1_proc$entropia_bloque, col = "red")
 lines(carro1_proc$entropia_bloque, col = "green")
-legend("topright", legend = c("Caminando", "Bus", "Carro"), col = c("blue", "red", "green"), lty = 1)
+lines(moto2_proc$entropia_bloque, col = "orange")
+
+legend("topright",
+       legend = c("Bus", "Bicicleta", "Carro", "Moto"),
+       col = c("blue", "red", "green", "orange"),
+       lty = 1)
+
 ```
+
+
+```{r}
+plot(bus1_proc$pendiente1_bloque, type = "l", col = "blue",
+     ylim = range(c(
+       bus1_proc$pendiente1_bloque,
+       bicicleta1_proc$pendiente1_bloque,
+       carro1_proc$pendiente1_bloque,
+       moto2_proc$pendiente1_bloque
+     ), na.rm = TRUE),
+     main = "Comparación de Pendiente (1ra derivada) por bloque - Medios de transporte",
+     xlab = "Índice", ylab = "Pendiente media")
+
+lines(bicicleta1_proc$pendiente1_bloque, col = "red")
+lines(carro1_proc$pendiente1_bloque, col = "green")
+lines(moto2_proc$pendiente1_bloque, col = "orange")
+
+legend("topright",
+       legend = c("Bus", "Bicicleta", "Carro", "Moto"),
+       col = c("blue", "red", "green", "orange"),
+       lty = 1)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
