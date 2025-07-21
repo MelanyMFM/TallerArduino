@@ -32,10 +32,13 @@ procesar_aceleracion <- function(df, tamano_bloque = 50, nombre = "dataset") {
   n <- nrow(df)
   n_bloques <- ceiling(n / tamano_bloque)
   
+  # Inicializar columnas
   df$sd_bloque <- NA
   df$entropia_bloque <- NA
   df$pendiente1_bloque <- NA
   df$pendiente2_bloque <- NA
+  df$iqr_bloque <- NA
+  df$cruces_cero_bloque <- NA
   
   for (i in 1:n_bloques) {
     start_idx <- (i - 1) * tamano_bloque + 1
@@ -48,8 +51,9 @@ procesar_aceleracion <- function(df, tamano_bloque = 50, nombre = "dataset") {
     
     # Métricas
     sd_val <- sd(segmento)
+    iqr_val <- IQR(segmento)
     
-    hist_vals <- hist(segmento, plot=FALSE, breaks=20)
+    hist_vals <- hist(segmento, plot = FALSE, breaks = 20)
     probs <- hist_vals$counts / sum(hist_vals$counts)
     probs <- probs[probs > 0]
     entropia_val <- entropy::entropy.empirical(probs, unit = "log2")
@@ -59,22 +63,24 @@ procesar_aceleracion <- function(df, tamano_bloque = 50, nombre = "dataset") {
     deriv2 <- diff(deriv1)
     pendiente2 <- mean(abs(deriv2), na.rm = TRUE)
     
-    # Asignar valores a las filas del bloque
+    cruces <- sum(diff(sign(segmento - mean(segmento, na.rm = TRUE))) != 0, na.rm = TRUE)
+    
+    # Asignar valores
     df$sd_bloque[start_idx:end_idx] <- sd_val
     df$entropia_bloque[start_idx:end_idx] <- entropia_val
     df$pendiente1_bloque[start_idx:end_idx] <- pendiente1
     df$pendiente2_bloque[start_idx:end_idx] <- pendiente2
+    df$iqr_bloque[start_idx:end_idx] <- iqr_val
+    df$cruces_cero_bloque[start_idx:end_idx] <- cruces
   }
   
-  # Paso 5: Summary y Plot
+  # Paso 5: Summary
   cat("\n--- Métricas resumen para:", nombre, "---\n")
-  print("Desviacion estandar")
-  print(summary(df$sd_bloque))
-  print("Entropia")
-  print(summary(df$entropia_bloque))
-  
- # plot(df$sd_bloque)
-       
+  cat("\nDesviación estándar:\n"); print(summary(df$sd_bloque))
+  cat("\nEntropía:\n"); print(summary(df$entropia_bloque))
+  cat("\nPendiente (1ra derivada):\n"); print(summary(df$pendiente1_bloque))
+  cat("\nIQR (Rango intercuartílico):\n"); print(summary(df$iqr_bloque))
+  cat("\nCruces por cero:\n"); print(summary(df$cruces_cero_bloque))
   
   return(df)
 }
@@ -156,11 +162,13 @@ bus1 <- read.csv("SensoresExtra/bus1.csv")
 bicicleta1 <- read.csv("SensoresExtra/Bicicleta Grabaci_n 1.csv")
 carro1 <- read.csv("SensoresExtra/Carro Grabaci_n 1.csv")
 moto2 <- read.csv("SensoresExtra/moto2.csv")
+moto3 <- read.csv("SensoresExtra/moto3.csv")
 
 bus1_proc <- procesar_aceleracion(bus1, tamano_bloque = 50, nombre = "bus 1")
 bicicleta1_proc <- procesar_aceleracion(bicicleta1, tamano_bloque = 50, nombre = "bicicleta1")
 carro1_proc <- procesar_aceleracion(carro1, tamano_bloque = 50, nombre = "carro1")
 moto2_proc <- procesar_aceleracion(moto2, tamano_bloque = 50, nombre = "moto2")
+moto3_proc <- procesar_aceleracion(moto3, tamano_bloque = 50, nombre = "moto3")
 ```
 
 ```{r}
@@ -169,7 +177,8 @@ plot(bus1_proc$sd_bloque, type = "l", col = "blue",
        bus1_proc$sd_bloque,
        bicicleta1_proc$sd_bloque,
        carro1_proc$sd_bloque,
-       moto2_proc$sd_bloque
+       moto2_proc$sd_bloque,
+       moto3_proc$sd_bloque
      ), na.rm = TRUE),
      main = "Comparación de SD por bloque - Medios de transporte",
      xlab = "Índice", ylab = "Desviación estándar")
@@ -199,36 +208,16 @@ plot(bus1_proc$entropia_bloque, type = "l", col = "blue",
 lines(bicicleta1_proc$entropia_bloque, col = "red")
 lines(carro1_proc$entropia_bloque, col = "green")
 lines(moto2_proc$entropia_bloque, col = "orange")
+lines(moto3_proc$entropia_bloque, col = "pink")
 
 legend("topright",
-       legend = c("Bus", "Bicicleta", "Carro", "Moto"),
-       col = c("blue", "red", "green", "orange"),
+       legend = c("Bus", "Bicicleta", "Carro", "Moto1", "Moto2"),
+       col = c("blue", "red", "green", "orange", "pink"),
        lty = 1)
 
 ```
 
 
-```{r}
-plot(bus1_proc$pendiente1_bloque, type = "l", col = "blue",
-     ylim = range(c(
-       bus1_proc$pendiente1_bloque,
-       bicicleta1_proc$pendiente1_bloque,
-       carro1_proc$pendiente1_bloque,
-       moto2_proc$pendiente1_bloque
-     ), na.rm = TRUE),
-     main = "Comparación de Pendiente (1ra derivada) por bloque - Medios de transporte",
-     xlab = "Índice", ylab = "Pendiente media")
-
-lines(bicicleta1_proc$pendiente1_bloque, col = "red")
-lines(carro1_proc$pendiente1_bloque, col = "green")
-lines(moto2_proc$pendiente1_bloque, col = "orange")
-
-legend("topright",
-       legend = c("Bus", "Bicicleta", "Carro", "Moto"),
-       col = c("blue", "red", "green", "orange"),
-       lty = 1)
-
-```
 
 
 
