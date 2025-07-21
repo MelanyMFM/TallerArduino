@@ -3,6 +3,7 @@ title: "prueba poster"
 format: html
 editor: visual
 ---
+
 ```{r}
 install.packages("zoo")  
 install.packages("e1071")
@@ -12,7 +13,6 @@ library(e1071)
 library(entropy)
 
 ```
-
 
 ```{r}
 procesar_aceleracion <- function(df, tamano_bloque = 50, nombre = "dataset") {
@@ -87,10 +87,8 @@ procesar_aceleracion <- function(df, tamano_bloque = 50, nombre = "dataset") {
 
 ```
 
-
-
-
 ## Caminando
+
 ```{r}
 caminando1 <- read.csv("SensoresExtra/caminando1.csv")
 caminando2 <- read.csv("SensoresExtra/caminando2.csv")
@@ -102,6 +100,7 @@ caminando2_proc <- procesar_aceleracion(caminando2, tamano_bloque = 50, nombre =
 caminando3_proc <- procesar_aceleracion(caminando3, tamano_bloque = 50, nombre = "Caminando 3")
 caminando4_proc <- procesar_aceleracion(caminando4, tamano_bloque = 50, nombre = "Caminando 4")
 ```
+
 ```{r}
 plot(caminando1_proc$sd_bloque, type = "l", col = "blue", ylim = range(c(caminando1_proc$sd_bloque, caminando2_proc$sd_bloque, caminando3_proc$sd_bloque, caminando4_proc$sd_bloque), na.rm=TRUE),
      main = "Comparación de SD por bloque caminando", xlab = "Índice", ylab = "SD")
@@ -216,25 +215,3 @@ legend("topright",
        lty = 1)
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
