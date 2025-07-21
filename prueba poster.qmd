@@ -1,0 +1,116 @@
+---
+title: "prueba poster"
+format: html
+editor: visual
+---
+```{r}
+install.packages("zoo")  
+install.packages("e1071")
+install.packages("entropy")
+library(zoo)
+library(e1071)
+library(entropy)
+
+```
+
+
+```{r}
+procesar_aceleracion <- function(df, tamano_bloque = 50, nombre = "dataset") {
+  # Paso 1: Calcular magnitud
+  df$acc_mag <- sqrt(df$AccX^2 + df$AccY^2 + df$AccZ^2)
+  
+  # Paso 2: Llenar NA con valor anterior
+  df$acc_mag <- zoo::na.locf(df$acc_mag, na.rm = FALSE)
+  
+  # Paso 3: Normalizar
+  normalizar_min_max <- function(x) {
+    (x - min(x, na.rm=TRUE)) / (max(x, na.rm=TRUE) - min(x, na.rm=TRUE))
+  }
+  df$acc_mag_norm <- normalizar_min_max(df$acc_mag)
+  
+  # Paso 4: Calcular métricas por bloque
+  n <- nrow(df)
+  n_bloques <- ceiling(n / tamano_bloque)
+  
+  df$sd_bloque <- NA
+  df$entropia_bloque <- NA
+  df$pendiente1_bloque <- NA
+  df$pendiente2_bloque <- NA
+  
+  for (i in 1:n_bloques) {
+    start_idx <- (i - 1) * tamano_bloque + 1
+    end_idx <- min(i * tamano_bloque, n)
+    
+    segmento <- df$acc_mag_norm[start_idx:end_idx]
+    
+    # Evitar errores si el segmento tiene NA
+    if (all(is.na(segmento))) next
+    
+    # Métricas
+    sd_val <- sd(segmento)
+    
+    hist_vals <- hist(segmento, plot=FALSE, breaks=20)
+    probs <- hist_vals$counts / sum(hist_vals$counts)
+    probs <- probs[probs > 0]
+    entropia_val <- entropy::entropy.empirical(probs, unit = "log2")
+    
+    deriv1 <- diff(segmento)
+    pendiente1 <- mean(abs(deriv1), na.rm = TRUE)
+    deriv2 <- diff(deriv1)
+    pendiente2 <- mean(abs(deriv2), na.rm = TRUE)
+    
+    # Asignar valores a las filas del bloque
+    df$sd_bloque[start_idx:end_idx] <- sd_val
+    df$entropia_bloque[start_idx:end_idx] <- entropia_val
+    df$pendiente1_bloque[start_idx:end_idx] <- pendiente1
+    df$pendiente2_bloque[start_idx:end_idx] <- pendiente2
+  }
+  
+  # Paso 5: Summary y Plot
+  cat("\n--- Métricas resumen para:", nombre, "---\n")
+  print("Desviacion estandar")
+  print(summary(df$sd_bloque))
+  print("Entropia")
+  print(summary(df$entropia_bloque))
+  
+ # plot(df$sd_bloque)
+       
+  
+  return(df)
+}
+
+```
+
+
+```{r}
+
+caminando1 <- read.csv("SensoresExtra/caminando1.csv")
+bus1 <- read.csv("SensoresExtra/bus1.csv")
+carro1 <- read.csv("SensoresExtra/Carro Grabaci_n 1.csv")
+bicicleta1 <- read.csv("SensoresExtra/Bicicleta Grabaci_n 1.csv")
+
+caminando1_proc <- procesar_aceleracion(caminando1, tamano_bloque = 50, nombre = "Caminando 1")
+bus1_proc <- procesar_aceleracion(bus1, tamano_bloque = 50, nombre = "Bus 1")
+carro1_proc <- procesar_aceleracion(carro1, tamano_bloque = 50, nombre = "Carro 1")
+bicicleta1_proc <- procesar_aceleracion(bicicleta1, tamano_bloque = 50, nombre = "Bicicleta 1")
+```
+```{r}
+plot(caminando1_proc$sd_bloque, type = "l", col = "blue", ylim = range(c(caminando1_proc$sd_bloque, bus1_proc$sd_bloque, carro1_proc$sd_bloque, bicicleta1_proc$sd_bloque), na.rm=TRUE),
+     main = "Comparación de SD por bloque", xlab = "Índice", ylab = "SD")
+lines(bus1_proc$sd_bloque, col = "red")
+lines(carro1_proc$sd_bloque, col = "green")
+lines(bicicleta1_proc$sd_bloque, col = "yellow")
+legend("topright", legend = c("Caminando", "Bus", "Carro", "Bicicleta"), col = c("blue", "red", "green", "yellow"), lty = 1)
+
+```
+
+```{r}
+plot(caminando1_proc$entropia_bloque, type = "l", col = "blue", ylim = range(c(caminando1_proc$entropia_bloque, bus1_proc$entropia_bloque, carro1_proc$entropia_bloque), na.rm=TRUE),
+     main = "Comparación de entropia por bloque", xlab = "Índice", ylab = "SD")
+lines(bus1_proc$entropia_bloque, col = "red")
+lines(carro1_proc$entropia_bloque, col = "green")
+legend("topright", legend = c("Caminando", "Bus", "Carro"), col = c("blue", "red", "green"), lty = 1)
+```
+
+
+
